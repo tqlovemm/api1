@@ -6,12 +6,11 @@ use Yii;
 use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
-use yii\filters\auth\CompositeAuth;
-use yii\filters\auth\QueryParamAuth;
+use yii\helpers\Response;
 
-class UserController extends ActiveController
+class ThreadController extends ActiveController
 {
-    public $modelClass = 'app\modules\v1\models\User';
+    public $modelClass = 'app\modules\v1\models\Thread';
     public $serializer = [
         'class' => 'yii\rest\Serializer',
         'collectionEnvelope' => 'items',
@@ -51,12 +50,31 @@ class UserController extends ActiveController
     {
         $model = new $this->modelClass();
         $model->load(Yii::$app->getRequest()->getBodyParams(), '');
-        $model->email = base64_encode($model->email);
+        $images = $model->image_path;
+        $Mpath = array();
+        $images = explode(',',$images);
+        for($i=0;$i<count($images);$i++){
+
+            $pathStr = "uploads/thread/".date("Ymd");
+            if ( !file_exists( $pathStr ) ) {
+                if ( !mkdir( $pathStr , 0777 , true ) ) {
+                    return false;
+                }
+            }
+            $savePath = $pathStr.'/'.time().rand(1,10000).'.jpg';
+            file_put_contents($savePath,base64_decode($images[$i]));
+            array_push($Mpath,'http://'.$_SERVER['SERVER_NAME'].':'.$_SERVER["SERVER_PORT"].'/'.$savePath);
+
+        }
+        $model->image_path = json_encode($Mpath);
+
         if (!$model->save()) {
             return array_values($model->getFirstErrors())[0];
         }
 
-        return $model;
+
+        Response::show('202','保存成功');
+
     }
 
     public function actionUpdate($id)
@@ -71,12 +89,17 @@ class UserController extends ActiveController
 
     public function actionDelete($id)
     {
-        return $this->findModel($id)->delete();
+        if($this->findModel($id)->delete()){
+
+            Response::show('202','删除成功');
+
+        }
     }
 
     public function actionView($id)
     {
         return $this->findModel($id);
+
     }
 
     protected function findModel($id)
