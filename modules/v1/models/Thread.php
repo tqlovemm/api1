@@ -4,10 +4,11 @@ namespace app\modules\v1\models;
 
 use app\components\db\ActiveRecord;
 use Yii;
-use yii\web\IdentityInterface;
+
 
 /**
  * This is the model class for table "forum_thread".
+ *
  * @property integer $id
  * @property string $content
  * @property string $user_id
